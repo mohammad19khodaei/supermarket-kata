@@ -6,38 +6,62 @@ class Supermarket
 {
     private $items = [];
 
-    private $catalog = [];
+    private Catalog $catalog;
 
-    private $offers = [];
+    private array $offers;
 
-    public function __construct(array $catalog, array $offers)
+    /**
+     * Supermarket Constructor
+     */
+    public function __construct(Catalog $catalog, array $offers)
     {
         $this->catalog = $catalog;
         $this->offers = $offers;
     }
 
-    public function addItem(string $item)
+    /**
+     *  add input product to shop list
+     *
+     * @param string $productName
+     * @return void
+     */
+    public function addProduct(string $productName)
     {
-        if (!isset($this->items[$item])) {
-            $this->items[$item] = 0;
+        if ($this->catalog->exists($productName)) {
+            if (!isset($this->items[$productName])) {
+                $this->items[$productName] = 0;
+            }
+            $this->items[$productName] += 1;
         }
-        $this->items[$item] += 1;
     }
 
+    /**
+     *  get total price of shop list
+     *
+     *  @return int
+     */
     public function getTotal()
     {
         $total = 0;
         foreach ($this->items as $item => $count) {
+            $unitPrice = $this->catalog->getPrice($item);
             if ($this->hasOffer($item, $count)) {
-                $total += -1 * (intdiv($count, $this->offers[$item][0]) * ($this->offers[$item][0] * $this->catalog[$item] - $this->offers[$item][1]));
+                $total -= $this->offers[$item]->getDiscount($count, $unitPrice);
             }
-            $total += ($this->catalog[$item] ?? 0) * $count;
+            $total += $unitPrice * $count;
         }
         return $total;
     }
 
-    protected function hasOffer($item, $count): bool
+    /**
+     * check input item has any offer accordiing to count of item
+     *
+     * @param string $item
+     * @param int $count
+     * @return bool
+     */
+    protected function hasOffer(string $item, int $count): bool
     {
-        return isset($this->offers[$item]) && $count >= $this->offers[$item][0];
+        return isset($this->offers[$item]);
     }
 }
